@@ -143,27 +143,25 @@ casper.writeContentToCodeMirror = function (content) {
         });
     }
 
-//    casper.then(function doTestForNewEditor() {
-//        // If we are on a new editor, the autosave is going to get triggered when we try to type, so we need to trigger
-//        // that and wait for it to sort itself out
-//        if (/ghost\/editor\/$/.test(casper.getCurrentUrl())) {
-//            casper.waitForSelector('.CodeMirror-wrap textarea', function onSuccess() {
-//                casper.click('.CodeMirror-wrap textarea');
-//            }, function onTimeout() {
-//                casper.test.fail('CodeMirror was not found on initial load.');
-//            }, 2000);
-//
-//            casper.waitForUrl(/\/ghost\/editor\/\d+\/$/, function onSuccess() {
-//                doWrite();
-//            }, function onTimeout() {
-//                casper.test.fail('The url didn\'t change: ' + casper.getCurrentUrl());
-//            }, 2000);
-//        } else {
-//            doWrite();
-//        }
-//    });
+    casper.then(function doTestForNewEditor() {
+        // If we are on a new editor, the autosave is going to get triggered when we try to type, so we need to trigger
+        // that and wait for it to sort itself out
+        if (/ghost\/editor\/$/.test(casper.getCurrentUrl())) {
+            casper.waitForSelector('.CodeMirror-wrap textarea', function onSuccess() {
+                casper.click('.CodeMirror-wrap textarea');
 
-    doWrite();
+                casper.waitForUrl(/\/ghost\/editor\/\d+\/$/, function onSuccess() {
+                    doWrite();
+                }, function onTimeout() {
+                    casper.test.fail('The url didn\'t change: ' + casper.getCurrentUrl());
+                }, 2000);
+            }, function onTimeout() {
+                casper.test.fail('CodeMirror was not found on initial load.');
+            }, 2000);
+        } else {
+            doWrite();
+        }
+    });
 };
 
 casper.waitForOpacity = function (classname, opacity, then, timeout) {

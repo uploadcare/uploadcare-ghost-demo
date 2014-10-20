@@ -133,20 +133,22 @@ CasperTest.begin('Post can be changed to static page', 6, function suite(test) {
 
     casper.thenClick('.post-settings');
 
-    casper.thenClick('label[for=static-page]');
+    casper.then(function () {
+        casper.thenClick('label[for=static-page]');
+        casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function waitForSuccess(resource) {
+            test.assert(resource.status < 400);
 
-    casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function waitForSuccess(resource) {
-        test.assert(resource.status < 400);
-
-        test.assertExists('.post-setting-static-page:checked', 'can turn on static page');
+            test.assertExists('.post-setting-static-page:checked', 'can turn on static page');
+        });
     });
 
-    casper.thenClick('label[for=static-page]');
+    casper.then(function () {
+        casper.thenClick('label[for=static-page]');
+        casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function waitForSuccess(resource) {
+            test.assert(resource.status < 400);
 
-    casper.waitForResource(/\/posts\/\d+\/\?include=tags/, function waitForSuccess(resource) {
-        test.assert(resource.status < 400);
-
-        test.assertDoesntExist('.post-setting-static-page:checked', 'can turn off static page');
+            test.assertDoesntExist('.post-setting-static-page:checked', 'can turn off static page');
+        });
     });
 });
 
