@@ -126,34 +126,42 @@ screens = {
 casper.writeContentToCodeMirror = function (content) {
     var lines = content.split('\n');
 
-    // If we are on a new editor, the autosave is going to get triggered when we try to type, so we need to trigger
-    // that and wait for it to sort itself out
-    if (/ghost\/editor\/$/.test(casper.getCurrentUrl())) {
-        casper.waitForSelector('.CodeMirror-wrap textarea', function onSuccess() {
-            casper.click('.CodeMirror-wrap textarea');
-        }, function onTimeout() {
-            casper.test.fail('CodeMirror was not found on initial load.');
-        }, 2000);
+    function doWrite() {
+        casper.then(function doWriteStep() {
+            casper.waitForSelector('.CodeMirror-wrap textarea', function onSuccess() {
+                casper.each(lines, function (self, line) {
+                    self.sendKeys('.CodeMirror-wrap textarea', line, {keepFocus: true});
+                    self.sendKeys('.CodeMirror-wrap textarea', casper.page.event.key.Enter, {keepFocus: true});
+                });
 
-        casper.waitForUrl(/\/ghost\/editor\/\d+\/$/, function onSuccess() {
-            // do nothing
-        }, function onTimeout() {
-            casper.test.fail('The url didn\'t change: ' + casper.getCurrentUrl());
-        }, 2000);
+                casper.captureScreenshot('CodeMirror-Text.png');
+
+                return this;
+            }, function onTimeout() {
+                casper.test.fail('CodeMirror was not found on main load.');
+            }, 2000);
+        });
     }
 
-    casper.waitForSelector('.CodeMirror-wrap textarea', function onSuccess() {
-        casper.each(lines, function (self, line) {
-            self.sendKeys('.CodeMirror-wrap textarea', line, {keepFocus: true});
-            self.sendKeys('.CodeMirror-wrap textarea', casper.page.event.key.Enter, {keepFocus: true});
-        });
+    casper.then(function doTestForNewEditor() {
+        // If we are on a new editor, the autosave is going to get triggered when we try to type, so we need to trigger
+        // that and wait for it to sort itself out
+        if (/ghost\/editor\/$/.test(casper.getCurrentUrl())) {
+            casper.waitForSelector('.CodeMirror-wrap textarea', function onSuccess() {
+                casper.click('.CodeMirror-wrap textarea');
+            }, function onTimeout() {
+                casper.test.fail('CodeMirror was not found on initial load.');
+            }, 2000);
 
-        casper.captureScreenshot('CodeMirror-Text.png');
-
-        return this;
-    }, function onTimeout() {
-        casper.test.fail('CodeMirror was not found on main load.');
-    }, 2000);
+            casper.waitForUrl(/\/ghost\/editor\/\d+\/$/, function onSuccess() {
+                doWrite();
+            }, function onTimeout() {
+                casper.test.fail('The url didn\'t change: ' + casper.getCurrentUrl());
+            }, 2000);
+        } else {
+            doWrite();
+        }
+    });
 };
 
 casper.waitForOpacity = function (classname, opacity, then, timeout) {
@@ -463,18 +471,24 @@ CasperTest.Routines = (function () {
 
         casper.waitForSelectorTextChange('.entry-preview .rendered-markdown');
 
-        if (publish) {
-            // Open the publish options menu;
-            casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
+        function doPublish() {
+            casper.then(function doPublishStep() {
+                // Open the publish options menu;
+                casper.thenClick('.js-publish-splitbutton .dropdown-toggle');
 
-            casper.waitForOpaque('.js-publish-splitbutton .open');
+                casper.waitForOpaque('.js-publish-splitbutton .open');
 
-            // Select the publish post button
-            casper.thenClick('.post-save-publish a');
+                // Select the publish post button
+                casper.thenClick('.post-save-publish a');
 
-            casper.waitForSelectorTextChange('.js-publish-button', function onSuccess() {
-                casper.thenClick('.js-publish-button');
+                casper.waitForSelectorTextChange('.js-publish-button', function onSuccess() {
+                    casper.thenClick('.js-publish-button');
+                });
             });
+        }
+
+        if (publish) {
+            doPublish();
         } else {
             casper.thenClick('.js-publish-button');
         }
