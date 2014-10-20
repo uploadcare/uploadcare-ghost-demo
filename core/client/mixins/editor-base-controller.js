@@ -301,9 +301,9 @@ var EditorControllerMixin = Ember.Mixin.create(MarkerManager, {
         },
 
         autoSaveNew: function () {
-            if (this.get('isNew')) {
-                this.send('autoSave');
-            }
+//            if (this.get('isNew')) {
+//                this.send('autoSave');
+//            }
         }
     }
 });
