@@ -145,6 +145,22 @@ UploadUi = function ($dropzone, settings) {
         initWithDropzone: function () {
             var self = this;
 
+            var handleUploadFinished = function(file) {
+                file.done(function(fileInfo) {
+                    $dropzone.trigger('uploadsuccess', fileInfo.cdnUrl || 'http://');
+                });
+            };
+
+            var panel = uploadcare.openPanel($dropzone, '',
+                {
+                    publicKey:'demopublickey',
+                    imagesOnly: true,
+                    crop: '',
+                    tabs: 'file camera url facebook gdrive dropbox instagram flickr'
+                }
+            ).done(handleUploadFinished);
+
+
             // This is the start point if no image exists
             $dropzone.find('img.js-upload-target').css({display: 'none'});
             $dropzone.find('div.description').show();
