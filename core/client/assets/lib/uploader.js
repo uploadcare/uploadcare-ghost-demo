@@ -145,20 +145,27 @@ UploadUi = function ($dropzone, settings) {
         initWithDropzone: function () {
             var self = this;
 
-            var handleUploadFinished = function(file) {
-                file.done(function(fileInfo) {
-                    $dropzone.trigger('uploadsuccess', fileInfo.cdnUrl || 'http://');
-                });
-            };
+            if (settings.uploadcarePublicKey) {
+                var handleUploadFinished = function(file) {
+                    file.done(function(fileInfo) {
+                        $dropzone.trigger('uploadsuccess', fileInfo.cdnUrl || 'http://');
+                    });
+                };
 
-            var panel = uploadcare.openPanel($dropzone, '',
-                {
-                    publicKey:'demopublickey',
-                    imagesOnly: true,
-                    crop: '',
-                    tabs: 'file camera url facebook gdrive dropbox instagram flickr'
-                }
-            ).done(handleUploadFinished);
+                console.log('SETTINGS'); console.log(settings.uploadcarePublicKey);
+
+                var panel = uploadcare.openPanel($dropzone, '',
+                    {
+                        publicKey: settings.uploadcarePublicKey,
+                        imagesOnly: true,
+                        crop: '',
+                        tabs: 'file camera url facebook gdrive dropbox instagram flickr',
+                        autoStore: true
+                    }
+                ).done(handleUploadFinished);
+                $dropzone.parent().addClass('uploadcare-responsive-panel');
+                return;
+            }
 
 
             // This is the start point if no image exists
