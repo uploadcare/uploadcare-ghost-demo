@@ -34,7 +34,7 @@ var Ghost = Ghost || {};
                         } else {
                             output = '<section id="image_upload_' + key + '" class="js-drop-zone image-uploader">' +
                                 result + '<div class="description">Add image of <strong>' + alt + '</strong></div>' +
-                                '<input data-url="upload" class="js-fileupload main fileupload" type="file" name="uploadimage">' +
+                                //'<input data-url="upload" class="js-fileupload main fileupload" type="file" name="uploadimage">' +
                                 '</section>';
                         }
 
