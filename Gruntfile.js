@@ -592,7 +592,9 @@ var _              = require('lodash'),
                         'core/shared/lib/showdown/extensions/ghostimagepreview.js',
                         'core/shared/lib/showdown/extensions/ghostgfm.js',
                         'core/shared/lib/showdown/extensions/ghostfootnotes.js',
-                        'core/shared/lib/showdown/extensions/ghosthighlight.js'
+                        'core/shared/lib/showdown/extensions/ghosthighlight.js',
+
+                        'core/shared/lib/showdown/extensions/uploadcareimagepreview.js'
                     ]
                 },
 
@@ -630,7 +632,9 @@ var _              = require('lodash'),
                         'core/shared/lib/showdown/extensions/ghostimagepreview.js',
                         'core/shared/lib/showdown/extensions/ghostgfm.js',
                         'core/shared/lib/showdown/extensions/ghostfootnotes.js',
-                        'core/shared/lib/showdown/extensions/ghosthighlight.js'
+                        'core/shared/lib/showdown/extensions/ghosthighlight.js',
+
+                        'core/shared/lib/showdown/extensions/uploadcareimagepreview.js'
                     ]
                 }
             },
