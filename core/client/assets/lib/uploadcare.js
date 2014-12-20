@@ -6,7 +6,7 @@ var UploadUi,
 
 UploadUi = function ($dropzone, settings) {
     var $url = '<div class="js-url"><input class="url js-upload-url" type="url" placeholder="http://"/></div>',
-        $cancel = '<a class="image-cancel js-cancel" title="Delete"><span class="hidden">Delete</span></a>',
+        $cancel = '<a class="image-cancel js-cancel" title="DEL"><span class="hidden">DEL</span></a>',
         $progress =  $('<div />', {
             class: 'js-upload-progress progress progress-success active',
             role: 'progressbar',
@@ -144,6 +144,29 @@ UploadUi = function ($dropzone, settings) {
 
         initWithDropzone: function () {
             var self = this;
+
+            if (settings.uploadcarePublicKey) {
+                var handleUploadFinished = function(file) {
+                    file.done(function(fileInfo) {
+                        $dropzone.trigger('uploadsuccess', fileInfo.cdnUrl || 'http://');
+                    });
+                };
+
+                console.log('SETTINGS'); console.log(settings.uploadcarePublicKey);
+
+                var panel = uploadcare.openPanel($dropzone, '',
+                    {
+                        publicKey: settings.uploadcarePublicKey,
+                        imagesOnly: true,
+                        crop: '',
+                        tabs: 'file camera url facebook gdrive dropbox instagram flickr',
+                        autoStore: true
+                    }
+                ).done(handleUploadFinished);
+                $dropzone.parent().addClass('uploadcare-responsive-panel');
+                return;
+            }
+
 
             // This is the start point if no image exists
             $dropzone.find('img.js-upload-target').css({display: 'none'});

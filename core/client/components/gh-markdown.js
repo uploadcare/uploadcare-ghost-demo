@@ -1,4 +1,4 @@
-import uploader from 'ghost/assets/lib/uploader';
+import uploader from 'ghost/assets/lib/choose-uploader';
 
 var Markdown = Ember.Component.extend({
     didInsertElement: function () {
