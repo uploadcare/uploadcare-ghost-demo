@@ -85,5 +85,17 @@
                 <p>Select a theme for your blog</p>
             </div>
         </fieldset>
+        
+        <fieldset>
+            <div class="form-group description-container">
+                <label for="uploadcare-publickey">Uploadcare public key</label>
+                {{input id="uploadcare-publickey" name="general[uploadcarePublicKey]" type="text" value=uploadcarePublicKey}}
+                <p>
+                    To obtain a public key, go to <a target="_blank" href="https://uploadcare.com/dashboard/">Uploadcare Dashboard</a>,
+                    and select a project where you want to store images for this Ghost instance.
+                </p>
+
+            </div>
+        </fieldset>
     </form>
 </section>

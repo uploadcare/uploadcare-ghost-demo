@@ -213,4 +213,60 @@
             background: $red;
         }
     }
+
+    .edit-buttons {
+        position: absolute;
+        z-index: 300;
+        max-width: 50%;
+
+        &.bottom-right {
+            bottom: 10px;
+            right: 10px;
+        }
+
+        &.bottom-left {
+            bottom: 10px;
+            left: 10px;
+        }
+
+        .image {
+            padding: 6px 8px;
+            z-index: 300;
+            color: #fff;
+            text-decoration: none;
+            line-height: 0;
+            border-radius: $border-radius;
+            background: rgba(0,0,0,0.6);
+            box-shadow: rgba(255,255,255,0.2) 0 0 0 1px;
+            font-size: 1rem;
+            vertical-align: middle;
+
+            &.active {
+                color: #fff;
+                background: rgba($red,0.6);
+            }
+
+            &:hover {
+                color: #fff;
+                cursor: pointer;
+                background: $red;
+            }
+
+            &.image-gray   { @include icon("B&W", 11px); }
+            &.image-invert { @include icon("INV", 11px); }
+            &.image-sharp  { @include icon("SH", 11px); }
+            &.image-blur   { @include icon("BL", 11px); }
+            &.image-rot90  { @include icon("90\b0", 11px); }
+            &.image-rot180 { @include icon("180\b0", 11px); }
+            &.image-rot270 { @include icon("270\b0", 11px); }
+            &.image-mirror { @include icon("\2194", 11px); }
+            &.image-flip   { @include icon("\2195", 11px); }
+
+            &.image-480   { @include icon("480x240", 11px); }
+            &.image-600   { @include icon("600x480", 11px); }
+            &.image-800   { @include icon("800x600", 11px); }
+            &.image-1200  { @include icon("1200x800", 11px); }
+        }
+    }
+
 }//.pre-image-uploader
