@@ -146,7 +146,7 @@ var UploadcareUrl = function(expr) {
         },
         compile: function() {
             if (!this.uuid) return '';
-            return this.root + this.uuid + '/' + this.cmds + this.file;
+            return this.root + this.uuid + '/' + this.crop + this.cmds + this.file;
         },
     });
 };
