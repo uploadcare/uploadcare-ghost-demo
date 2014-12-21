@@ -130,7 +130,7 @@ var UploadcareUrl = function(expr) {
 
     $.extend(this, {
         _op_rx : function(operation) {
-            return new RegExp('(-\/' + operation + '\/(.*?\/)?)(?=-\/|[^\/]*$)', 'g');
+            return new RegExp('(-\/' + operation + '\/([^-]*?\/)?)(?=-\/|[^\/]*$)', 'g');
         },
         find: function(operation) {
             return this._op_rx(operation).test(this.cmds);
