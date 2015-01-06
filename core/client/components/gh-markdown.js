@@ -1,4 +1,4 @@
-import uploader from 'ghost/assets/lib/uploader';
+import uploader from 'ghost/assets/lib/choose-uploader';
 
 var Markdown = Ember.Component.extend({
     didInsertElement: function () {
@@ -18,10 +18,9 @@ var Markdown = Ember.Component.extend({
         function handleDropzoneEvents() {
             var dropzones = $('.js-drop-zone');
 
-            uploader.call(dropzones, {
+            uploader.call(dropzones, $.extend({
                 editor: true,
-                fileStorage: this.get('config.fileStorage')
-            });
+            }, this.get('config')));
 
             dropzones.on('uploadstart', Ember.run.bind(this, 'sendAction', 'uploadStarted'));
             dropzones.on('uploadfailure', Ember.run.bind(this, 'sendAction', 'uploadFinished'));
