@@ -1,10 +1,7 @@
-import ghostPaths from 'ghost/utils/ghost-paths';
-
 var UploadUi,
     UploadcareUrl,
     OPERATIONS,
-    upload,
-    Ghost = ghostPaths();
+    upload;
 
 
 /*
