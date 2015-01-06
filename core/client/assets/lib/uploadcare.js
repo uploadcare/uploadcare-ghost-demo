@@ -17,7 +17,7 @@ OPERATIONS = {
         command: 'grayscale',
         find: 'grayscale',
         drop: ['grayscale'],
-    }, 
+    },
     'invert': {
         command: 'invert',
         find: 'invert',
@@ -34,7 +34,7 @@ OPERATIONS = {
         params: ['50'],
         find: 'blur',
         drop: ['sharp', 'blur'],
-    }, 
+    },
     'rot90': {
         command: 'rotate',
         params: ['90'],
@@ -62,34 +62,34 @@ OPERATIONS = {
         command: 'flip',
         find: 'flip',
         drop: ['flip'],
-    }, 
+    },
     '480': {
         command: 'preview',
         params: ['480x240'],
         find: 'preview/480x240',
         drop: ['preview'],
-    }, 
+    },
     '600': {
         command: 'preview',
         params: ['600x480'],
         find: 'preview/600x480',
         drop: ['preview'],
-    }, 
+    },
     '800': {
         command: 'preview',
         params: ['800x600'],
         find: 'preview/800x600',
         drop: ['preview'],
-    }, 
+    },
     '1200': {
         command: 'preview',
         params: ['1200x800'],
         find: 'preview/1200x800',
         drop: ['preview'],
-    }, 
+    },
 }
-       
-                
+
+
 /*
  * Uploadcare URL analyzer and constructor
  */
@@ -97,7 +97,7 @@ var UploadcareUrl = function(expr) {
 
     /* Constants */
     var _p = function(i) { return '[0-9a-f]{' + i + '}' };
-    var UUID_RX = [_p(8), _p(4), _p(4), _p(4), _p(12)].join('-'); 
+    var UUID_RX = [_p(8), _p(4), _p(4), _p(4), _p(12)].join('-');
     var DEFAULT_ROOT = 'http://www.ucarecdn.com';
 
     // Parse the URL expression
