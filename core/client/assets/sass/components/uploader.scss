@@ -269,4 +269,15 @@
         }
     }
 
+    &.loading {
+        min-height: 100px;
+        background: url(https://social.uploadcare.com/static/images/loading_spinner.gif) center no-repeat;
+        img {
+            opacity: 0.2;
+        }
+        .edit-buttons {
+            display: none;
+        }
+    }
+
 }//.pre-image-uploader

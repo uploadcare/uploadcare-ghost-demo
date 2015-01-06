@@ -233,7 +233,18 @@ UploadUi = function ($dropzone, settings) {
                     if (!isActive) {
                         urlBuilder.add(value.command, value.params);
                     };
-                    $dropzone.trigger('uploadsuccess', urlBuilder.compile() || 'http://');
+
+                    var url = urlBuilder.compile();
+                    var trigger = function() {
+                        $dropzone.trigger('uploadsuccess', url || 'http://');
+                        $dropzone.removeClass('loading');
+                    }
+                    if (url) {
+                        var img = new Image();
+                        img.src = url;
+                        img.onload = trigger;
+                        if (!img.complete) $dropzone.addClass('loading');
+                    } else trigger();
                 });
             });
         },
