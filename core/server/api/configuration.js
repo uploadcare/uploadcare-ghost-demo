@@ -19,9 +19,7 @@ function getValidKeys() {
             mail: _.isObject(config.mail) ? config.mail.transport : '',
             blogUrl: config.url.replace(/\/$/, ''),
             blogTitle: config.theme.title,
-            //uploadcarePublicKey: settings.read({key: 'uploadcarePublicKey'})
-            //    .then(function(result) {return result.settings[0].value}).isPending(),
-            uploadcarePublicKey: 'demopublickey' // TODO: Get from the database
+            uploadcarePublicKey: config.uploadcarePublicKey
         };
 
     return validKeys;

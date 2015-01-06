@@ -70,9 +70,6 @@
         },
         "labs": {
             "defaultValue": "{}"
-        },
-        "uploadcarePublicKey": {
-            "defaultValue": "demopublickey"
         }
     },
     "theme": {
