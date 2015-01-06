@@ -68,6 +68,9 @@
         "ghost_foot": {
             "defaultValue" : ""
         },
+        "labs": {
+            "defaultValue": "{}"
+        },
         "uploadcarePublicKey": {
             "defaultValue": "demopublickey"
         }
