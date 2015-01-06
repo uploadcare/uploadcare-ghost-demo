@@ -4,6 +4,8 @@ import CurrentUserSettings from 'ghost/mixins/current-user-settings';
 import styleBody from 'ghost/mixins/style-body';
 
 var SettingsGeneralRoute = AuthenticatedRoute.extend(styleBody, loadingIndicator, CurrentUserSettings, {
+    titleToken: 'General',
+
     classNames: ['settings-view-general'],
 
     beforeModel: function () {
@@ -16,6 +18,12 @@ var SettingsGeneralRoute = AuthenticatedRoute.extend(styleBody, loadingIndicator
         return this.store.find('setting', {type: 'blog,theme'}).then(function (records) {
             return records.get('firstObject');
         });
+    },
+
+    actions: {
+        save: function () {
+            this.get('controller').send('save');
+        }
     }
 });
 

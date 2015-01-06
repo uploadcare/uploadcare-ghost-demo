@@ -19,6 +19,7 @@ var Promise         = require('bluebird'),
 
 // ## Helpers
 function prepareInclude(include) {
+    include = include || '';
     include = _.intersection(include.split(','), allowedIncludes);
     return include;
 }
@@ -46,7 +47,7 @@ sendInviteEmail = function sendInviteEmail(user) {
     }).then(function (resetToken) {
         var baseUrl = config.forceAdminSSL ? (config.urlSSL || config.url) : config.url;
 
-        emailData.resetLink = baseUrl.replace(/\/$/, '') + '/ghost/signup/' + resetToken + '/';
+        emailData.resetLink = baseUrl.replace(/\/$/, '') + '/ghost/signup/' + globalUtils.encodeBase64URLsafe(resetToken) + '/';
 
         return mail.generateContent({data: emailData, template: 'invite-user'});
     }).then(function (emailContent) {
@@ -154,7 +155,7 @@ users = {
                         roleId = parseInt(role.id || role, 10);
 
                     return dataProvider.User.findOne(
-                        {id: options.context.user, status: 'all'}, {include: 'roles'}
+                        {id: options.context.user, status: 'all'}, {include: ['roles']}
                     ).then(function (contextUser) {
                         var contextRoleId = contextUser.related('roles').toJSON()[0].id;
 
@@ -322,17 +323,23 @@ users = {
     changePassword: function changePassword(object, options) {
         var oldPassword,
             newPassword,
-            ne2Password;
+            ne2Password,
+            userId;
+
         return utils.checkObject(object, 'password').then(function (checkedPasswordReset) {
             oldPassword = checkedPasswordReset.password[0].oldPassword;
             newPassword = checkedPasswordReset.password[0].newPassword;
             ne2Password = checkedPasswordReset.password[0].ne2Password;
-
-            return dataProvider.User.changePassword(oldPassword, newPassword, ne2Password, options).then(function () {
-                return Promise.resolve({password: [{message: 'Password changed successfully.'}]});
-            }).catch(function (error) {
-                return Promise.reject(new errors.ValidationError(error.message));
-            });
+            userId = parseInt(checkedPasswordReset.password[0].user_id);
+        }).then(function () {
+            return canThis(options.context).edit.user(userId);
+        }).then(function () {
+            return dataProvider.User.changePassword(oldPassword, newPassword, ne2Password, userId, options);
+        }).then(function () {
+            return Promise.resolve({password: [{message: 'Password changed successfully.'}]});
+        }).catch(function (error) {
+            // return Promise.reject(new errors.ValidationError(error.message));
+            return errors.handleAPIError(error, 'You do not have permission to change the password for this user');
         });
     },
 

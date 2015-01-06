@@ -12,7 +12,6 @@ var api            = require('../api'),
     hbs            = require('express-hbs'),
     logger         = require('morgan'),
     middleware     = require('./middleware'),
-    packageInfo    = require('../../../package.json'),
     path           = require('path'),
     routes         = require('../routes'),
     slashes        = require('connect-slashes'),
@@ -24,6 +23,7 @@ var api            = require('../api'),
     oauth2orize    = require('oauth2orize'),
     authStrategies = require('./auth-strategies'),
     utils          = require('../utils'),
+    sitemapHandler = require('../data/sitemap/handler'),
 
     blogApp,
     setupMiddleware;
@@ -36,7 +36,7 @@ var api            = require('../api'),
 function ghostLocals(req, res, next) {
     // Make sure we have a locals value.
     res.locals = res.locals || {};
-    res.locals.version = packageInfo.version;
+    res.locals.version = config.ghostVersion;
     // relative path from the URL
     res.locals.relativeUrl = req.path;
 
@@ -203,7 +203,8 @@ function checkSSL(req, res, next) {
 // Handles requests to robots.txt and favicon.ico (and caches them)
 function serveSharedFile(file, type, maxAge) {
     var content,
-        filePath = path.join(config.paths.corePath, 'shared', file);
+        filePath = path.join(config.paths.corePath, 'shared', file),
+        re = /(\{\{blog-url\}\})/g;
 
     return function serveSharedFile(req, res, next) {
         if (req.url === '/' + file) {
@@ -215,7 +216,9 @@ function serveSharedFile(file, type, maxAge) {
                     if (err) {
                         return next(err);
                     }
-
+                    if (type === 'text/xsl' || type === 'text/plain') {
+                        buf = buf.toString().replace(re, config.url.replace(/\/$/, ''));
+                    }
                     content = {
                         headers: {
                             'Content-Type': type,
@@ -264,6 +267,7 @@ setupMiddleware = function (blogAppInstance, adminApp) {
 
     // Favicon
     blogApp.use(serveSharedFile('favicon.ico', 'image/x-icon', utils.ONE_DAY_S));
+    blogApp.use(serveSharedFile('sitemap.xsl', 'text/xsl', utils.ONE_DAY_S));
 
     // Static assets
     blogApp.use('/shared', express['static'](path.join(corePath, '/shared'), {maxAge: utils.ONE_HOUR_MS}));
@@ -292,13 +296,14 @@ setupMiddleware = function (blogAppInstance, adminApp) {
     // Serve robots.txt if not found in theme
     blogApp.use(serveSharedFile('robots.txt', 'text/plain', utils.ONE_HOUR_S));
 
-    // Add in all trailing slashes, properly include the subdir path
-    // in the redirect.
+    // site map
+    sitemapHandler(blogApp);
+
+    // Add in all trailing slashes
     blogApp.use(slashes(true, {
         headers: {
             'Cache-Control': 'public, max-age=' + utils.ONE_YEAR_S
-        },
-        base: config.paths.subdir
+        }
     }));
     blogApp.use(uncapitalise);
 

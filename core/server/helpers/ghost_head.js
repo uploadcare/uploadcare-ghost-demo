@@ -14,11 +14,13 @@ var hbs             = require('express-hbs'),
     config          = require('../config'),
     filters         = require('../filters'),
 
+    api                 = require('../api'),
     urlHelper           = require('./url'),
     meta_description    = require('./meta_description'),
     meta_title          = require('./meta_title'),
     excerpt             = require('./excerpt'),
     tagsHelper          = require('./tags'),
+    imageHelper         = require('./image'),
     ghost_head;
 
 ghost_head = function (options) {
@@ -42,12 +44,21 @@ ghost_head = function (options) {
     ops.push(urlHelper.call(self, {hash: {absolute: true}}));
     ops.push(meta_description.call(self));
     ops.push(meta_title.call(self));
+    if (self.post) {
+        ops.push(imageHelper.call(self.post, {hash: {absolute:true}}));
+
+        if (self.post.author) {
+            ops.push(imageHelper.call(self.post.author, {hash: {absolute:true}}));
+        }
+    }
 
     // Resolves promises then push pushes meta data into ghost_head
     return Promise.settle(ops).then(function (results) {
         var url = results[0].value(),
             metaDescription = results[1].value(),
             metaTitle = results[2].value(),
+            coverImage = results.length > 3 ? results[3].value() : null,
+            authorImage = results.length > 4 ? results[4].value() : null,
             publishedDate, modifiedDate,
             tags = tagsHelper.call(self.post, {hash: {autolink: 'false'}}).string.split(','),
             card = 'summary',
@@ -80,17 +91,8 @@ ghost_head = function (options) {
             publishedDate = moment(self.post.published_at).toISOString();
             modifiedDate = moment(self.post.updated_at).toISOString();
 
-            if (self.post.image) {
-                coverImage = self.post.image;
-                // Test to see if image was linked by url or uploaded
-                coverImage = coverImage.substring(0, 4) === 'http' ? coverImage : hbs.handlebars.Utils.escapeExpression(blog.url + coverImage);
+            if (coverImage) {
                 card = 'summary_large_image';
-            }
-
-            if (self.post.author.image) {
-                authorImage = self.post.author.image;
-                // Test to see if image was linked by url or uploaded
-                authorImage = authorImage.substring(0, 4) === 'http' ? authorImage : hbs.handlebars.Utils.escapeExpression(blog.url + authorImage);
             }
 
             // escaped data
@@ -145,7 +147,7 @@ ghost_head = function (options) {
                     });
                     head.push('');
                 } else if (content !== null && content !== undefined) {
-                    type = property.substring(0, 7) === 'twitter' ?  'name' : 'property';
+                    type = property.substring(0, 7) === 'twitter' ? 'name' : 'property';
                     head.push('<meta ' + type + '="' + property + '" content="' + content + '" />');
                 }
             });
@@ -155,7 +157,11 @@ ghost_head = function (options) {
 
         head.push('<meta name="generator" content="Ghost ' + trimmedVersion + '" />');
         head.push('<link rel="alternate" type="application/rss+xml" title="' +
-            title  + '" href="' + config.urlFor('rss') + '" />');
+            title  + '" href="' + config.urlFor('rss', null, true) + '" />');
+    }).then(function () {
+        return api.settings.read({key: 'ghost_head'});
+    }).then(function (response) {
+        head.push(response.settings[0].value);
         return filters.doFilter('ghost_head', head);
     }).then(function (head) {
         var headString = _.reduce(head, function (memo, item) { return memo + '\n    ' + item; }, '');

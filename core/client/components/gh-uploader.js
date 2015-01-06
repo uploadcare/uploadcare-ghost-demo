@@ -7,10 +7,10 @@ var PostImageUploader = Ember.Component.extend({
         var $this = this.$(),
             self = this;
 
-        uploader.call($this, {
+        this.set('uploaderReference', uploader.call($this, {
             editor: true,
             fileStorage: this.get('config.fileStorage')
-        });
+        }));
 
         $this.on('uploadsuccess', function (event, result) {
             if (result && result !== '' && result !== 'http://') {
@@ -18,7 +18,7 @@ var PostImageUploader = Ember.Component.extend({
             }
         });
 
-        $this.find('.js-cancel').on('click', function () {
+        $this.on('imagecleared', function () {
             self.sendAction('canceled');
         });
     }.on('didInsertElement'),

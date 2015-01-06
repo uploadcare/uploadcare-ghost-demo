@@ -12,6 +12,8 @@ paginationSettings = {
 };
 
 UsersIndexRoute = AuthenticatedRoute.extend(styleBody, PaginationRouteMixin, {
+    titleToken: 'Users',
+
     classNames: ['settings-view-users'],
 
     setupController: function (controller, model) {
@@ -31,7 +33,7 @@ UsersIndexRoute = AuthenticatedRoute.extend(styleBody, PaginationRouteMixin, {
 
                 return self.store.filter('user', paginationSettings, function (user) {
                     if (currentUser.get('isEditor')) {
-                        return user.get('isAuthor');
+                        return user.get('isAuthor') || user === currentUser;
                     }
                     return true;
                 });

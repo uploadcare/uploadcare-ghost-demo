@@ -4,11 +4,16 @@ var testUtils       = require('../../utils'),
     should          = require('should'),
     sequence        = require('../../../server/utils/sequence'),
     _               = require('lodash'),
+    Promise         = require('bluebird'),
+    sinon           = require('sinon'),
+    SettingsModel   = require('../../../server/models/settings').Settings,
 
     // Stuff we are testing
+    ghostBookshelf  = require('../../../server/models/base'),
     PostModel       = require('../../../server/models/post').Post,
     DataGenerator   = testUtils.DataGenerator,
-    context         = testUtils.context.owner;
+    context         = testUtils.context.owner,
+    sandbox         = sinon.sandbox.create();
 
 describe('Post Model', function () {
     // Keep the DB clean
@@ -16,9 +21,12 @@ describe('Post Model', function () {
     describe('Single author posts', function () {
         before(testUtils.teardown);
         afterEach(testUtils.teardown);
+        afterEach(function () {
+            sandbox.restore();
+        });
         beforeEach(testUtils.setup('owner', 'posts', 'apps'));
 
-        before(function () {
+        beforeEach(function () {
             should.exist(PostModel);
         });
 
@@ -134,6 +142,48 @@ describe('Post Model', function () {
                 }).catch(done);
         });
 
+        it('can findOne, returning a slug only permalink', function (done) {
+            var firstPost = 1;
+            sandbox.stub(SettingsModel, 'findOne', function () {
+                return Promise.resolve({toJSON: function () {
+                    return {value: '/:slug/'};
+                }});
+            });
+
+            PostModel.findOne({id: firstPost})
+                .then(function (result) {
+                    should.exist(result);
+                    firstPost = result.toJSON();
+                    firstPost.url.should.equal('/html-ipsum/');
+
+                    done();
+                }).catch(done);
+        });
+
+        it('can findOne, returning a dated permalink', function (done) {
+            var firstPost = 1,
+                today = new Date(),
+                dd = ('0' + today.getDate()).slice(-2),
+                mm = ('0' + (today.getMonth() + 1)).slice(-2),
+                yyyy = today.getFullYear(),
+                postLink = '/' + yyyy + '/' + mm + '/' + dd + '/html-ipsum/';
+
+            sandbox.stub(SettingsModel, 'findOne', function () {
+                return Promise.resolve({toJSON: function () {
+                    return {value: '/:year/:month/:day/:slug/'};
+                }});
+            });
+
+            PostModel.findOne({id: firstPost})
+                .then(function (result) {
+                    should.exist(result);
+                    firstPost = result.toJSON();
+                    firstPost.url.should.equal(postLink);
+
+                    done();
+                }).catch(done);
+        });
+
         it('can edit', function (done) {
             var firstPost = 1;
 
@@ -144,7 +194,7 @@ describe('Post Model', function () {
                 post.id.should.equal(firstPost);
                 post.title.should.not.equal('new title');
 
-                return PostModel.edit({title: 'new title'}, _.extend(context, {id: firstPost}));
+                return PostModel.edit({title: 'new title'}, _.extend({}, context, {id: firstPost}));
             }).then(function (edited) {
                 should.exist(edited);
                 edited.attributes.title.should.equal('new title');
@@ -359,26 +409,30 @@ describe('Post Model', function () {
             var firstItemData = {id: 1};
 
             // Test that we have the post we expect, with exactly one tag
-            PostModel.findOne(firstItemData).then(function (results) {
+            PostModel.findOne(firstItemData, {include: ['tags']}).then(function (results) {
                 var post;
                 should.exist(results);
                 post = results.toJSON();
                 post.id.should.equal(firstItemData.id);
                 post.tags.should.have.length(2);
-                post.tags[0].should.equal(firstItemData.id);
+                post.tags[0].id.should.equal(firstItemData.id);
 
                 // Destroy the post
                 return PostModel.destroy(firstItemData);
             }).then(function (response) {
                 var deleted = response.toJSON();
 
-                deleted.tags.should.be.empty;
                 should.equal(deleted.author, undefined);
 
                 // Double check we can't find the post again
                 return PostModel.findOne(firstItemData);
             }).then(function (newResults) {
                 should.equal(newResults, null);
+
+                // Double check we can't find any related tags
+                return ghostBookshelf.knex.select().table('posts_tags').where('post_id', firstItemData.id);
+            }).then(function (postsTags) {
+                postsTags.should.be.empty;
 
                 done();
             }).catch(done);
@@ -428,6 +482,13 @@ describe('Post Model', function () {
                 return PostModel.findPage({limit: 10, page: 2, status: 'all'});
             }).then(function (paginationResult) {
                 paginationResult.meta.pagination.pages.should.equal(11);
+
+                return PostModel.findPage({limit: 'all', status: 'all'});
+            }).then(function (paginationResult) {
+                paginationResult.meta.pagination.page.should.equal(1);
+                paginationResult.meta.pagination.limit.should.equal('all');
+                paginationResult.meta.pagination.pages.should.equal(1);
+                paginationResult.posts.length.should.equal(107);
 
                 done();
             }).catch(done);

@@ -1,4 +1,24 @@
 var DeleteUserController = Ember.Controller.extend({
+    userPostCount: Ember.computed('model.id', function () {
+        var promise,
+            query = {
+                author: this.get('model.slug'),
+                status: 'all'
+            };
+
+        promise = this.store.find('post', query).then(function (results) {
+            return results.meta.pagination.total;
+        });
+
+        return Ember.Object.extend(Ember.PromiseProxyMixin, {
+            count: Ember.computed.alias('content'),
+
+            inflection: Ember.computed('count', function () {
+                return this.get('count') > 1 ? 'posts' : 'post';
+            })
+        }).create({promise: promise});
+    }),
+
     actions: {
         confirmAccept: function () {
             var self = this,

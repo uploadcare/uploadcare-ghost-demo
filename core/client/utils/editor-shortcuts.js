@@ -1,8 +1,8 @@
-var shortcuts = {},
-    ctrlOrCmd = navigator.userAgent.indexOf('Mac') !== -1 ? 'command' : 'ctrl';
+import ctrlOrCmd from 'ghost/utils/ctrl-or-cmd';
+
+var shortcuts = {};
 
 // General editor shortcuts
-shortcuts[ctrlOrCmd + '+s'] = 'save';
 shortcuts[ctrlOrCmd + '+alt+p'] = 'publish';
 shortcuts['alt+shift+z'] = 'toggleZenMode';
 

@@ -2,6 +2,8 @@ import AuthenticatedRoute from 'ghost/routes/authenticated';
 import styleBody from 'ghost/mixins/style-body';
 
 var SettingsUserRoute = AuthenticatedRoute.extend(styleBody, {
+    titleToken: 'User',
+
     classNames: ['settings-view-user'],
 
     model: function (params) {
@@ -44,6 +46,12 @@ var SettingsUserRoute = AuthenticatedRoute.extend(styleBody, {
         }
 
         this._super();
+    },
+
+    actions: {
+        save: function () {
+            this.get('controller').send('save');
+        }
     }
 });
 
