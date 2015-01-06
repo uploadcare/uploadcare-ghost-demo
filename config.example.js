@@ -25,7 +25,8 @@ config = {
             host: '127.0.0.1',
             // Port to be passed to node's `net.Server#listen()`, for iisnode set this to `process.env.PORT`
             port: '2368'
-        }
+        },
+        uploadcarePublicKey: ''
     },
 
     // ### Development **(default)**
@@ -64,7 +65,8 @@ config = {
         },
         paths: {
             contentPath: path.join(__dirname, '/content/')
-        }
+        },
+        uploadcarePublicKey: 'demopublickey'
     },
 
     // **Developers only need to edit below here**
