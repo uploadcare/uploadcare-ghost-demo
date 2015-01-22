@@ -22,20 +22,9 @@ var LabsController = Ember.Controller.extend(Ember.Evented, {
         });
     },
 
-    tagsUIFlag: Ember.computed.alias('config.tagsUI'),
     codeUIFlag: Ember.computed.alias('config.codeInjectionUI'),
 
-    useTagsUI: Ember.computed('controllers.feature.tagsUI', function (key, value) {
-        // setter
-        if (arguments.length > 1) {
-            this.saveLabs('tagsUI', value);
-        }
-
-        // getter
-        return this.get('controllers.feature.tagsUI') || false;
-    }),
-
-    useCodeInjectionUI: Ember.computed('controllers.feature.tagsUI', function (key, value) {
+    useCodeInjectionUI: Ember.computed('controllers.feature.codeInjectionUI', function (key, value) {
         // setter
         if (arguments.length > 1) {
             this.saveLabs('codeInjectionUI', value);
@@ -64,6 +53,13 @@ var LabsController = Ember.Controller.extend(Ember.Evented, {
                 contentType: false,
                 processData: false
             }).then(function () {
+                // Clear the store, so that all the new data gets fetched correctly.
+                self.store.unloadAll('post');
+                self.store.unloadAll('tag');
+                self.store.unloadAll('user');
+                self.store.unloadAll('role');
+                self.store.unloadAll('setting');
+                self.store.unloadAll('notification');
                 self.notifications.showSuccess('Import successful.');
             }).catch(function (response) {
                 if (response && response.jqXHR && response.jqXHR.responseJSON && response.jqXHR.responseJSON.errors) {

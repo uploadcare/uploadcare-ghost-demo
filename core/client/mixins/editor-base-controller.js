@@ -50,6 +50,10 @@ EditorControllerMixin = Ember.Mixin.create(MarkerManager, {
         return this.get('model.tags').mapBy('name');
     }),
 
+    postOrPage: Ember.computed('model.page', function () {
+        return this.get('model.page') ? 'Page' : 'Post';
+    }),
+
     // compares previousTagNames to tagNames
     tagNamesEqual: function () {
         var tagNames = this.get('tagNames'),
@@ -191,7 +195,7 @@ EditorControllerMixin = Ember.Mixin.create(MarkerManager, {
             path = this.get('ghostPaths.url').join(this.get('config.blogUrl'), this.get('model.url'));
 
         if (status === 'published') {
-            message += '&nbsp;<a href="' + path + '">View Post</a>';
+            message += '&nbsp;<a href="' + path + '">View ' + this.get('postOrPage') + '</a>';
         }
         this.notifications.showSuccess(message, {delayed: delay});
     },
@@ -316,9 +320,7 @@ EditorControllerMixin = Ember.Mixin.create(MarkerManager, {
             var editor = this.get('codemirror'),
                 line = this.findLine(Ember.$(e.currentTarget).attr('id')),
                 lineNumber = editor.getLineNumber(line),
-                // jscs:disable
                 match = line.text.match(/\([^\n]*\)?/),
-                // jscs:enable
                 replacement = '(http://)';
 
             if (match) {
@@ -328,9 +330,7 @@ EditorControllerMixin = Ember.Mixin.create(MarkerManager, {
                     {line: lineNumber, ch: match.index + match[0].length - 1}
                 );
             } else {
-                // jscs:disable
                 match = line.text.match(/\]/);
-                // jscs:enable
                 if (match) {
                     editor.replaceRange(
                         replacement,

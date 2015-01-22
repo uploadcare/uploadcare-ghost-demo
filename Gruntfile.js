@@ -8,6 +8,7 @@
 var _              = require('lodash'),
     colors         = require('colors'),
     fs             = require('fs-extra'),
+    moment         = require('moment'),
     getTopContribs = require('top-gh-contribs'),
     path           = require('path'),
     Promise        = require('bluebird'),
@@ -17,6 +18,7 @@ var _              = require('lodash'),
     cwd            = process.cwd().replace(/( |\(|\))/g, escapeChar + '$1'),
     buildDirectory = path.resolve(cwd, '.build'),
     distDirectory  = path.resolve(cwd, '.dist'),
+    mochaPath      = path.resolve(cwd + '/node_modules/grunt-mocha-cli/node_modules/mocha/bin/mocha'),
 
     // ## Build File Patterns
     // A list of files and patterns to include when creating a release zip.
@@ -328,19 +330,15 @@ var _              = require('lodash'),
 
                 test: {
                     command: function (test) {
-                        var mochaPath = path.resolve(cwd + '/node_modules/grunt-mocha-cli/node_modules/mocha/bin/mocha');
-                        return mochaPath  + ' --timeout=15000 --ui=bdd --reporter=spec core/test/' + test;
+                        return 'node ' + mochaPath  + ' --timeout=15000 --ui=bdd --reporter=spec core/test/' + test;
                     }
                 },
 
                 // #### Generate coverage report
                 // See the `grunt test-coverage` task in the section on [Testing](#testing) for more information.
                 coverage: {
-                    command: path.resolve(cwd  + '/node_modules/mocha/bin/mocha  --timeout 15000 --reporter' +
-                    ' html-cov > coverage.html ./core/test/blanket_coverage.js'),
-                    execOptions: {
-                        env: 'NODE_ENV=' + process.env.NODE_ENV
-                    }
+                    command: 'node ' + mochaPath + ' --timeout 15000 --reporter html-cov > coverage.html ' +
+                    path.resolve(cwd + '/core/test/blanket_coverage.js')
                 }
             },
 
@@ -1029,7 +1027,8 @@ var _              = require('lodash'),
             var done = this.async(),
                 templatePath = 'core/client/templates/-contributors.hbs',
                 imagePath = 'core/client/assets/img/contributors/',
-                ninetyDaysAgo = Date.now() - (1000 * 60 * 60 * 24 * 90);
+                ninetyDaysAgo = Date.now() - (1000 * 60 * 60 * 24 * 90),
+                oauthKey = process.env.GITHUB_OAUTH_KEY;
 
             if (fs.existsSync(templatePath) && !grunt.option('force')) {
                 grunt.log.writeln('Contributors template already exists.');
@@ -1044,6 +1043,7 @@ var _              = require('lodash'),
                 getTopContribs({
                     user: 'tryghost',
                     repo: 'ghost',
+                    oauthKey: oauthKey,
                     releaseDate: ninetyDaysAgo,
                     count: 20
                 })
@@ -1077,7 +1077,16 @@ var _              = require('lodash'),
                     return downloadImagePromise(contributor.avatarUrl + '&s=60', contributor.name);
                 }));
             }).then(done).catch(function (error) {
-                grunt.log.error(error.stack || error);
+                grunt.log.error(error);
+
+                if (error.http_status) {
+                    grunt.log.writeln('GitHub API request returned status: ' + error.http_status);
+                }
+
+                if (error.ratelimit_limit) {
+                    grunt.log.writeln('Rate limit data: limit: %d, remaining: %d, reset: %s', error.ratelimit_limit, error.ratelimit_remaining, moment.unix(error.ratelimit_reset).fromNow());
+                }
+
                 done(false);
             });
         });

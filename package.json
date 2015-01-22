@@ -1,6 +1,6 @@
 {
     "name"        : "ghost",
-    "version"     : "0.5.7",
+    "version"     : "0.5.8",
     "description" : "Just a blogging platform.",
     "author"      : "Ghost Foundation",
     "homepage"    : "http://ghost.org",
@@ -88,7 +88,7 @@
         "grunt-ember-templates": "~0.5.0-alpha",
         "grunt-es6-module-transpiler": "~0.6.0",
         "grunt-express-server": "~0.4.19",
-        "grunt-jscs": "~1.1.0",
+        "grunt-jscs": "~1.2.0",
         "grunt-mocha-cli": "~1.11.0",
         "grunt-sass": "~0.16.1",
         "grunt-shell": "~1.1.1",
@@ -101,6 +101,6 @@
         "sinon": "~1.12.2",
         "supertest": "~0.15.0",
         "testem": "^0.6.23",
-        "top-gh-contribs": "0.0.2"
+        "top-gh-contribs": "0.0.5"
     }
 }
