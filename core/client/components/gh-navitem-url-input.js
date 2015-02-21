@@ -16,7 +16,7 @@ var NavItemUrlInputComponent = Ember.TextField.extend({
     }),
 
     fakePlaceholder: Ember.computed('isBaseUrl', 'hasFocus', function () {
-        return this.get('isBaseUrl') && !this.get('hasFocus');
+        return this.get('isBaseUrl') && this.get('last') && !this.get('hasFocus');
     }),
 
     isRelative: Ember.computed('value', function () {
@@ -27,13 +27,13 @@ var NavItemUrlInputComponent = Ember.TextField.extend({
         var url = this.get('url'),
             baseUrl = this.get('baseUrl');
 
+        this.set('value', url);
+
         // if we have a relative url, create the absolute url to be displayed in the input
         if (this.get('isRelative')) {
             url = joinUrlParts(baseUrl, url);
+            this.set('value', url);
         }
-
-        this.set('value', url);
-        this.sendAction('change', this.get('value'));
     },
 
     focusIn: function (event) {
@@ -58,8 +58,23 @@ var NavItemUrlInputComponent = Ember.TextField.extend({
         }
     },
 
+    keyPress: function (event) {
+        // enter key
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            this.notifyUrlChanged();
+        }
+
+        return true;
+    },
+
     focusOut: function () {
         this.set('hasFocus', false);
+
+        this.notifyUrlChanged();
+    },
+
+    notifyUrlChanged: function () {
         this.set('value', this.get('value').trim());
 
         var url = this.get('value'),

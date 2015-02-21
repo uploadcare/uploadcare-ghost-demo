@@ -15,34 +15,13 @@ var moment      = require('moment'),
     template    = require('../helpers/template'),
     errors      = require('../errors'),
     cheerio     = require('cheerio'),
+    routeMatch  = require('path-match')(),
 
     frontendControllers,
     staticPostPermalink,
-    oldRoute,
-    dummyRouter = require('express').Router();
-
-// Overload this dummyRouter as we only want the layer object.
-// We don't want to keep in memory many items in an array so we
-// clear the stack array after every invocation.
-oldRoute = dummyRouter.route;
-dummyRouter.route = function () {
-    var layer;
-
-    // Apply old route method
-    oldRoute.apply(dummyRouter, arguments);
-
-    // Grab layer object
-    layer = dummyRouter.stack[0];
-
-    // Reset stack array for memory purposes
-    dummyRouter.stack = [];
-
-    // Return layer
-    return layer;
-};
 
 // Cache static post permalink regex
-staticPostPermalink = dummyRouter.route('/:slug/:edit?');
+staticPostPermalink = routeMatch('/:slug/:edit?');
 
 function getPostPage(options) {
     return api.settings.read('postsPerPage').then(function (response) {
@@ -58,7 +37,27 @@ function getPostPage(options) {
     });
 }
 
-function formatPageResponse(posts, page) {
+/**
+ * returns a promise with an array of values used in {{navigation}}
+ * TODO(nsfmc): should this be in the 'prePostsRender' pipeline?
+ * @return {Promise} containing an array of navigation items
+ */
+function getSiteNavigation() {
+    return Promise.resolve(api.settings.read('navigation')).then(function (result) {
+        if (result && result.settings && result.settings.length) {
+            return JSON.parse(result.settings[0].value) || [];
+        }
+        return [];
+    });
+}
+
+/**
+ * formats variables for handlebars in multi-post contexts.
+ * If extraValues are available, they are merged in the final value
+ * TODO(nsfmc): should this be in the 'prePostsRender' pipeline?
+ * @return {Promise} containing page variables
+ */
+function formatPageResponse(posts, page, extraValues) {
     // Delete email from author for frontend output
     // TODO: do this on API level if no context is available
     posts = _.each(posts, function (post) {
@@ -67,19 +66,36 @@ function formatPageResponse(posts, page) {
         }
         return post;
     });
-    return {
-        posts: posts,
-        pagination: page.meta.pagination
-    };
+    extraValues = extraValues || {};
+
+    return getSiteNavigation().then(function (navigation) {
+        var resp = {
+            posts: posts,
+            pagination: page.meta.pagination,
+            navigation: navigation || {}
+        };
+        return _.extend(resp, extraValues);
+    });
 }
 
+/**
+ * similar to formatPageResponse, but for single post pages
+ * TODO(nsfmc): should this be in the 'prePostsRender' pipeline?
+ * @return {Promise} containing page variables
+ */
 function formatResponse(post) {
     // Delete email from author for frontend output
     // TODO: do this on API level if no context is available
     if (post.author) {
         delete post.author.email;
     }
-    return {post: post};
+
+    return getSiteNavigation().then(function (navigation) {
+        return {
+            post: post,
+            navigation: navigation
+        };
+    });
 }
 
 function handleError(next) {
@@ -176,7 +192,9 @@ frontendControllers = {
                     }
 
                     setResponseContext(req, res);
-                    res.render(view, formatPageResponse(posts, page));
+                    formatPageResponse(posts, page).then(function (result) {
+                        res.render(view, result);
+                    });
                 });
             });
         }).catch(handleError(next));
@@ -219,19 +237,19 @@ frontendControllers = {
             // Render the page of posts
             filters.doFilter('prePostsRender', page.posts).then(function (posts) {
                 getActiveThemePaths().then(function (paths) {
-                    var view = template.getThemeViewForTag(paths, options.tag),
+                    var view = template.getThemeViewForTag(paths, options.tag);
 
                         // Format data for template
-                        result = _.extend(formatPageResponse(posts, page), {
-                            tag: page.meta.filters.tags ? page.meta.filters.tags[0] : ''
-                        });
-
-                    // If the resulting tag is '' then 404.
-                    if (!result.tag) {
-                        return next();
-                    }
-                    setResponseContext(req, res);
-                    res.render(view, result);
+                    formatPageResponse(posts, page, {
+                        tag: page.meta.filters.tags ? page.meta.filters.tags[0] : ''
+                    }).then(function (result) {
+                        // If the resulting tag is '' then 404.
+                        if (!result.tag) {
+                            return next();
+                        }
+                        setResponseContext(req, res);
+                        res.render(view, result);
+                    });
                 });
             });
         }).catch(handleError(next));
@@ -274,20 +292,20 @@ frontendControllers = {
             // Render the page of posts
             filters.doFilter('prePostsRender', page.posts).then(function (posts) {
                 getActiveThemePaths().then(function (paths) {
-                    var view = paths.hasOwnProperty('author.hbs') ? 'author' : 'index',
+                    var view = paths.hasOwnProperty('author.hbs') ? 'author' : 'index';
 
                         // Format data for template
-                        result = _.extend(formatPageResponse(posts, page), {
-                            author: page.meta.filters.author ? page.meta.filters.author : ''
-                        });
+                    formatPageResponse(posts, page, {
+                        author: page.meta.filters.author ? page.meta.filters.author : ''
+                    }).then(function (result) {
+                        // If the resulting author is '' then 404.
+                        if (!result.author) {
+                            return next();
+                        }
 
-                    // If the resulting author is '' then 404.
-                    if (!result.author) {
-                        return next();
-                    }
-
-                    setResponseContext(req, res);
-                    res.render(view, result);
+                        setResponseContext(req, res);
+                        res.render(view, result);
+                    });
                 });
             });
         }).catch(handleError(next));
@@ -296,38 +314,40 @@ frontendControllers = {
     single: function (req, res, next) {
         var path = req.path,
             params,
-            editFormat,
             usingStaticPermalink = false;
 
         api.settings.read('permalinks').then(function (response) {
             var permalink = response.settings[0],
-                postLookup;
+                editFormat,
+                postLookup,
+                match;
 
             editFormat = permalink.value[permalink.value.length - 1] === '/' ? ':edit?' : '/:edit?';
 
-            // Convert saved permalink into an express Route object
-            permalink = dummyRouter.route(permalink.value + editFormat);
+            // Convert saved permalink into a path-match function
+            permalink = routeMatch(permalink.value + editFormat);
+            match = permalink(path);
 
             // Check if the path matches the permalink structure.
             //
             // If there are no matches found we then
             // need to verify it's not a static post,
             // and test against that permalink structure.
-            if (permalink.match(path) === false) {
+            if (match === false) {
+                match = staticPostPermalink(path);
                 // If there are still no matches then return.
-                if (staticPostPermalink.match(path) === false) {
+                if (match === false) {
                     // Reject promise chain with type 'NotFound'
                     return Promise.reject(new errors.NotFoundError());
                 }
 
-                permalink = staticPostPermalink;
                 usingStaticPermalink = true;
             }
 
-            params = permalink.params;
+            params = match;
 
             // Sanitize params we're going to use to lookup the post.
-            postLookup = _.pick(permalink.params, 'slug', 'id');
+            postLookup = _.pick(params, 'slug', 'id');
             // Add author, tag and fields
             postLookup.include = 'author,tags,fields';
 
@@ -358,12 +378,13 @@ frontendControllers = {
 
                 filters.doFilter('prePostsRender', post).then(function (post) {
                     getActiveThemePaths().then(function (paths) {
-                        var view = template.getThemeViewForPost(paths, post),
-                            response = formatResponse(post);
+                        var view = template.getThemeViewForPost(paths, post);
 
-                        setResponseContext(req, res, response);
+                        return formatResponse(post).then(function (response) {
+                            setResponseContext(req, res, response);
 
-                        res.render(view, response);
+                            res.render(view, response);
+                        });
                     });
                 });
             }
@@ -529,14 +550,59 @@ frontendControllers = {
                             },
                             htmlContent = cheerio.load(post.html, {decodeEntities: false});
 
+                        if (post.image) {
+                            htmlContent('p').first().before('<img src="' + post.image + '" />');
+                            htmlContent('img').attr('alt', post.title);
+                        }
+
                         // convert relative resource urls to absolute
                         ['href', 'src'].forEach(function (attributeName) {
                             htmlContent('[' + attributeName + ']').each(function (ix, el) {
+                                var baseUrl,
+                                    attributeValue,
+                                    parsed;
+
                                 el = htmlContent(el);
 
-                                var attributeValue = el.attr(attributeName);
-                                attributeValue = url.resolve(siteUrl, attributeValue);
+                                attributeValue = el.attr(attributeName);
 
+                                // if URL is absolute move on to the next element
+                                try {
+                                    parsed = url.parse(attributeValue);
+
+                                    if (parsed.protocol) {
+                                        return;
+                                    }
+                                } catch (e) {
+                                    return;
+                                }
+
+                                // compose an absolute URL
+
+                                // if the relative URL begins with a '/' use the blog URL (including sub-directory)
+                                // as the base URL, otherwise use the post's URL.
+                                baseUrl = attributeValue[0] === '/' ? siteUrl : item.url;
+
+                                // prevent double slashes
+                                if (baseUrl.slice(-1) === '/' && attributeValue[0] === '/') {
+                                    attributeValue = attributeValue.substr(1);
+                                }
+
+                                // make sure URL has a trailing slash
+                                try {
+                                    parsed = url.parse(attributeValue);
+
+                                    if (parsed.pathname && parsed.pathname.slice(-1) !== '/') {
+                                        parsed.pathname += '/';
+
+                                        attributeValue = url.format(parsed);
+                                    }
+                                } catch (e) {
+                                    // if the URL we've built cannot be parsed, fall back to the unprocessed URL
+                                    return;
+                                }
+
+                                attributeValue = baseUrl + attributeValue;
                                 el.attr(attributeName, attributeValue);
                             });
                         });
