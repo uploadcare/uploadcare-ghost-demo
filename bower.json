@@ -25,7 +25,8 @@
     "nprogress": "0.1.2",
     "showdown-ghost": "0.3.4",
     "validator-js": "3.28.0",
-    "google-caja": "5669.0.0"
+    "google-caja": "5669.0.0",
+    "uploadcare": "~2.0.3"
   },
   "devDependencies": {
     "ember-mocha": "~0.3.0",
