@@ -26,7 +26,7 @@
     "showdown-ghost": "0.3.4",
     "validator-js": "3.28.0",
     "google-caja": "5669.0.0",
-    "uploadcare": "~1.5.3"
+    "uploadcare": "~2.0.3"
   },
   "devDependencies": {
     "ember-mocha": "~0.3.0",
