@@ -61,7 +61,7 @@ User = ghostBookshelf.Model.extend({
         if (this.hasChanged('slug') || !this.get('slug')) {
             // Generating a slug requires a db call to look for conflicting slugs
             return ghostBookshelf.Model.generateSlug(User, this.get('slug') || this.get('name'),
-                {transacting: options.transacting, shortSlug: !this.get('slug')})
+                {status: 'all', transacting: options.transacting, shortSlug: !this.get('slug')})
                 .then(function (slug) {
                     self.set({slug: slug});
                 });
@@ -357,7 +357,10 @@ User = ghostBookshelf.Model.extend({
      */
     findOne: function (data, options) {
         var query,
-            status;
+            status,
+            lookupRole = data.role;
+
+        delete data.role;
 
         data = _.extend({
             status: 'active'
@@ -370,17 +373,19 @@ User = ghostBookshelf.Model.extend({
         options.withRelated = _.union(options.withRelated, options.include);
 
         // Support finding by role
-        if (data.role) {
-            options.withRelated = [{
-                roles: function (qb) {
-                    qb.where('name', data.role);
-                }
-            }];
-            delete data.role;
-        }
+        if (lookupRole) {
+            options.withRelated = _.union(options.withRelated, ['roles']);
+            options.include = _.union(options.include, ['roles']);
 
-        // We pass include to forge so that toJSON has access
-        query = this.forge(data, {include: options.include});
+            query = this.forge(data, {include: options.include});
+
+            query.query('join', 'roles_users', 'users.id', '=', 'roles_users.id');
+            query.query('join', 'roles', 'roles_users.role_id', '=', 'roles.id');
+            query.query('where', 'roles.name', '=', lookupRole);
+        } else {
+            // We pass include to forge so that toJSON has access
+            query = this.forge(data, {include: options.include});
+        }
 
         data = this.filterData(data);
 
@@ -610,7 +615,7 @@ User = ghostBookshelf.Model.extend({
             level = 1;
         } else {
             level = parseInt(status.match(regexp)[1], 10) + 1;
-            if (level > 3) {
+            if (level > 4) {
                 user.set('status', 'locked');
             } else {
                 user.set('status', 'warn-' + level);
@@ -639,7 +644,7 @@ User = ghostBookshelf.Model.extend({
                     if (!matched) {
                         return Promise.resolve(self.setWarning(user, {validate: false})).then(function (remaining) {
                             s = (remaining > 1) ? 's' : '';
-                            return Promise.reject(new errors.UnauthorizedError('Your password is incorrect.<br>' +
+                            return Promise.reject(new errors.UnauthorizedError('Your password is incorrect. <br />' +
                                 remaining + ' attempt' + s + ' remaining!'));
 
                             // Use comma structure, not .catch, because we don't want to catch incorrect passwords
